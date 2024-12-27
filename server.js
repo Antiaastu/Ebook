@@ -3,11 +3,13 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const bookRoutes = require('./routes/bookRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 app.use(cors()); 
+app.use('/uploads', express.static('uploads'));
 
 // Database connection
 connectDB();
@@ -15,7 +17,7 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
-
+app.use('/api/upload', uploadRoutes);
 app.get('/', (req, res) => {
     res.send('Ebook API is running...');
 });
