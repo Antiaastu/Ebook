@@ -24,7 +24,7 @@ const login = async (req, res) => {
         if (!isPasswordValid) return res.status(401).json({ message: 'Invalid credentials' });
 
         const token = generateToken(user);
-        res.json({ token });
+        res.json({ token, role: user.role, });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
