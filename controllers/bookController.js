@@ -14,9 +14,11 @@ const getBooks = async (req, res) => {
 // Add a new book (Admin only)
 const addBook = async (req, res) => {
     try {
-        const { title, author, description, image, fileUrl } = req.body;
+        const { title, author, description } = req.body;
+        const image = `${req.protocol}://${req.get('host')}/${req.files['image'][0].path}`;
+        const fileUrl = `${req.protocol}://${req.get('host')}/${req.files['file'][0].path}`;
         const book = await Book.create({ title, author, description, image, fileUrl });
-        res.status(201).json({ message: 'Book added successfully' });
+        res.status(201).json({ message: 'Book added successfully', book});
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
