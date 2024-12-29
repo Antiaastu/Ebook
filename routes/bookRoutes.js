@@ -6,5 +6,5 @@ const router = express.Router();
 
 router.get('/', authMiddleware(), getBooks);
 router.post('/', authMiddleware('Admin'), upload.fields([{ name: 'image' }, { name: 'file' }]) ,addBook);
-router.get('/download/:id', authMiddleware(), downloadBook);
+router.get('/download/:id', downloadBook);
 module.exports = router;
