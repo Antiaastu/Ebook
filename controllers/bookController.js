@@ -35,22 +35,34 @@ const downloadBook = async (req, res) => {
     try {
         const { id } = req.params;
         const book = await Book.findById(id);
-        if (!book) return res.status(404).json({ message: 'Book not found' });
 
-        const filePath = path.join(__dirname, '..', book.fileUrl.replace(/\\/g, '/'));
+        if (!book) {
+            return res.status(404).json({ message: 'Book not found' });
+        }
 
-        // Set headers to force file download
-        res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
-        res.setHeader('Content-Type', 'application/octet-stream');
-        
-        res.download(filePath, (err) => {
-            if (err) {
-                console.error('Error downloading file:', err);
-                res.status(500).json({ message: 'Failed to download the file' });
-            }
-        });
+        if (book.fileUrl.startsWith('http')) {
+            // If fileUrl is an external URL, redirect to it
+            return res.redirect(book.fileUrl);
+        } else {
+            // Serve local file
+            const filePath = path.join(
+                __dirname,
+                '..',
+                book.fileUrl.replace(/\\/g, '/')
+            );
+
+            res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+            res.setHeader('Content-Type', 'application/octet-stream');
+
+            res.download(filePath, (err) => {
+                if (err) {
+                    console.error('Error downloading file:', err);
+                    res.status(500).json({ message: 'Failed to download the file' });
+                }
+            });
+        }
     } catch (error) {
-        console.error('Download Error:', error);
+        console.error('Download Error:', error.message);
         res.status(500).json({ message: error.message });
     }
 };
