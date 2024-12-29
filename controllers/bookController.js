@@ -32,6 +32,7 @@ const addBook = async (req, res) => {
         const fileResult = await cloudinary.uploader.upload(req.files['file'][0].path, {
             folder: 'ebook_app/files',
             resource_type: 'raw',
+            access_mode: 'public',
         });
 
         const book = await Book.create({
