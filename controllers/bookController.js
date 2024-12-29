@@ -12,7 +12,6 @@ const getBooks = async (req, res) => {
 };
 
 // Add a new book (Admin only)
-// Add a new book (Admin only)
 const addBook = async (req, res) => {
     try {
         const { title, author, description } = req.body;
@@ -38,11 +37,23 @@ const downloadBook = async (req, res) => {
         const book = await Book.findById(id);
         if (!book) return res.status(404).json({ message: 'Book not found' });
 
-        const filePath = path.join(__dirname, '..', book.fileUrl);
-        res.download(filePath);
+        const filePath = path.join(__dirname, '..', book.fileUrl.replace(/\\/g, '/'));
+
+        // Set headers to force file download
+        res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        
+        res.download(filePath, (err) => {
+            if (err) {
+                console.error('Error downloading file:', err);
+                res.status(500).json({ message: 'Failed to download the file' });
+            }
+        });
     } catch (error) {
+        console.error('Download Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
+
 
 module.exports = { getBooks, addBook, downloadBook };
