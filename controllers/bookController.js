@@ -1,6 +1,6 @@
 const Book = require('../models/Book');
 const path = require('path');
-// const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 // Get all books
 const getBooks = async (req, res) => {
     try {
@@ -12,17 +12,24 @@ const getBooks = async (req, res) => {
 };
 
 // Add a new book (Admin only)
+// Add a new book (Admin only)
 const addBook = async (req, res) => {
     try {
         const { title, author, description } = req.body;
-        const image = `${req.protocol}://${req.get('host')}/${req.files['image'][0].path}`;
-        const fileUrl = `${req.protocol}://${req.get('host')}/${req.files['file'][0].path}`;
+        
+        // Force HTTPS in production
+        const protocol = req.headers['x-forwarded-proto'] === 'https' ? 'https' : req.protocol;
+        
+        const image = `${protocol}://${req.get('host')}/${req.files['image'][0].path.replace(/\\/g, '/')}`;
+        const fileUrl = `${protocol}://${req.get('host')}/${req.files['file'][0].path.replace(/\\/g, '/')}`;
+        
         const book = await Book.create({ title, author, description, image, fileUrl });
-        res.status(201).json({ message: 'Book added successfully', book});
+        res.status(201).json({ message: 'Book added successfully', book });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 };
+
 
 // Download book file
 const downloadBook = async (req, res) => {
