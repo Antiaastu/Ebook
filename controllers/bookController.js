@@ -1,6 +1,13 @@
 const Book = require('../models/Book');
-const path = require('path');
-const mongoose = require('mongoose');
+const cloudinary = require('cloudinary').v2;
+
+// Configure Cloudinary with Direct Credentials
+cloudinary.config({
+    cloud_name: 'djee4j8g6',
+    api_key: '383882444675896',
+    api_secret: 'fwaN-KvWWbUHtHtdAHnh1jn0PF8',
+});
+
 // Get all books
 const getBooks = async (req, res) => {
     try {
@@ -15,20 +22,32 @@ const getBooks = async (req, res) => {
 const addBook = async (req, res) => {
     try {
         const { title, author, description } = req.body;
-        
-        // Force HTTPS in production
-        const protocol = req.headers['x-forwarded-proto'] === 'https' ? 'https' : req.protocol;
-        
-        const image = `${protocol}://${req.get('host')}/${req.files['image'][0].path.replace(/\\/g, '/')}`;
-        const fileUrl = `${protocol}://${req.get('host')}/${req.files['file'][0].path.replace(/\\/g, '/')}`;
-        
-        const book = await Book.create({ title, author, description, image, fileUrl });
+
+        // Upload Image to Cloudinary
+        const imageResult = await cloudinary.uploader.upload(req.files['image'][0].path, {
+            folder: 'ebook_app/images',
+        });
+
+        // Upload File to Cloudinary
+        const fileResult = await cloudinary.uploader.upload(req.files['file'][0].path, {
+            folder: 'ebook_app/files',
+            resource_type: 'raw',
+        });
+
+        const book = await Book.create({
+            title,
+            author,
+            description,
+            image: imageResult.secure_url,
+            fileUrl: fileResult.secure_url,
+        });
+
         res.status(201).json({ message: 'Book added successfully', book });
     } catch (error) {
+        console.error('Add Book Error:', error.message);
         res.status(400).json({ message: error.message });
     }
 };
-
 
 // Download book file
 const downloadBook = async (req, res) => {
@@ -40,32 +59,12 @@ const downloadBook = async (req, res) => {
             return res.status(404).json({ message: 'Book not found' });
         }
 
-        if (book.fileUrl.startsWith('http')) {
-            // If fileUrl is an external URL, redirect to it
-            return res.redirect(book.fileUrl);
-        } else {
-            // Serve local file
-            const filePath = path.join(
-                __dirname,
-                '..',
-                book.fileUrl.replace(/\\/g, '/')
-            );
-
-            res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
-            res.setHeader('Content-Type', 'application/octet-stream');
-
-            res.download(filePath, (err) => {
-                if (err) {
-                    console.error('Error downloading file:', err);
-                    res.status(500).json({ message: 'Failed to download the file' });
-                }
-            });
-        }
+        // Redirect to Cloudinary File URL
+        return res.redirect(book.fileUrl);
     } catch (error) {
         console.error('Download Error:', error.message);
         res.status(500).json({ message: error.message });
     }
 };
-
 
 module.exports = { getBooks, addBook, downloadBook };
